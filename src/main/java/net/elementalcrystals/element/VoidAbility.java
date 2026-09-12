@@ -66,7 +66,10 @@ public class VoidAbility implements ElementAbility {
                 center.x - ACTIVE_RADIUS, center.y - 2, center.z - ACTIVE_RADIUS,
                 center.x + ACTIVE_RADIUS, center.y + 3, center.z + ACTIVE_RADIUS
         );
-        List<MobEntity> mobs = world.getEntitiesByClass(MobEntity.class, area, mob -> mob.isAlive() && mob != player);
+        // MobEntity never includes ServerPlayerEntity, so no explicit
+        // player-identity check is needed here (and the two types are not
+        // directly comparable in Java).
+        List<MobEntity> mobs = world.getEntitiesByClass(MobEntity.class, area, MobEntity::isAlive);
 
         float totalDamageDealt = 0f;
         for (MobEntity mob : mobs) {
