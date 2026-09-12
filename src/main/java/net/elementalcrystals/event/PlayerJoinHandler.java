@@ -3,11 +3,11 @@ package net.elementalcrystals.event;
 import net.elementalcrystals.ElementalCrystals;
 import net.elementalcrystals.item.ModItems;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.EquipmentSlot;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.PersistentStateManager;
 
