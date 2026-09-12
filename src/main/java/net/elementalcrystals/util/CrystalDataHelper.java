@@ -16,17 +16,30 @@ import java.util.Random;
  * in 1.20.5 and does not exist on 1.20.1's ItemStack API. We therefore use
  * the classic NBT approach via ItemStack#getOrCreateNbt() /
  * ItemStack#getNbt(), which is the version-correct approach for 1.20.1.
- * All crystal state (rolled element, activation flag, per-stack cooldown
- * expiry tick) lives in this NBT so that if a player ever ends up with more
- * than one crystal, each ItemStack tracks its own independent state.
+ * All crystal state (rolled element, activation flag, per-stack cooldowns
+ * for both active abilities) lives in this NBT so that if a player ever
+ * ends up with more than one crystal, each ItemStack tracks its own
+ * independent state.
+ * <p>
+ * Each element now has two independently-cooled active abilities (see
+ * ElementAbility): a PRIMARY ability (plain right-click) and a SECONDARY
+ * ability (sneak + right-click). Their cooldowns are tracked separately so
+ * using one never consumes the other's availability.
  */
 public final class CrystalDataHelper {
 
     private static final String KEY_ELEMENT = "Element";
     private static final String KEY_ACTIVATED = "Activated";
-    private static final String KEY_COOLDOWN_END = "CooldownEndTick";
+    private static final String KEY_PRIMARY_COOLDOWN_END = "PrimaryCooldownEndTick";
+    private static final String KEY_SECONDARY_COOLDOWN_END = "SecondaryCooldownEndTick";
 
     private static final Random RANDOM = new Random();
+
+    /** Which of an element's two active abilities a cooldown call refers to. */
+    public enum AbilitySlot {
+        PRIMARY,
+        SECONDARY
+    }
 
     private CrystalDataHelper() {
     }
@@ -58,37 +71,44 @@ public final class CrystalDataHelper {
         NbtCompound nbt = stack.getOrCreateNbt();
         nbt.putString(KEY_ELEMENT, rolled.getId());
         nbt.putBoolean(KEY_ACTIVATED, true);
-        nbt.putLong(KEY_COOLDOWN_END, 0L);
+        nbt.putLong(KEY_PRIMARY_COOLDOWN_END, 0L);
+        nbt.putLong(KEY_SECONDARY_COOLDOWN_END, 0L);
         return rolled;
     }
 
-    /**
-     * Puts this specific stack's active ability on cooldown until
-     * (world time + cooldownTicks). Stored as an absolute tick so it
-     * survives save/reload correctly (relative "ticks remaining" counters
-     * would otherwise need to be decremented every tick even when the
-     * item is sitting in a chest).
-     */
-    public static void startCooldown(ItemStack stack, ServerWorld world, int cooldownTicks) {
-        NbtCompound nbt = stack.getOrCreateNbt();
-        nbt.putLong(KEY_COOLDOWN_END, world.getTime() + cooldownTicks);
+    private static String cooldownKey(AbilitySlot slot) {
+        return slot == AbilitySlot.PRIMARY ? KEY_PRIMARY_COOLDOWN_END : KEY_SECONDARY_COOLDOWN_END;
     }
 
-    public static boolean isOnCooldown(ItemStack stack, ServerWorld world) {
+    /**
+     * Puts the given ability slot on cooldown until (world time +
+     * cooldownTicks). Stored as an absolute tick so it survives
+     * save/reload correctly (relative "ticks remaining" counters would
+     * otherwise need to be decremented every tick even when the item is
+     * sitting in a chest).
+     */
+    public static void startCooldown(ItemStack stack, ServerWorld world, AbilitySlot slot, int cooldownTicks) {
+        NbtCompound nbt = stack.getOrCreateNbt();
+        nbt.putLong(cooldownKey(slot), world.getTime() + cooldownTicks);
+    }
+
+    public static boolean isOnCooldown(ItemStack stack, ServerWorld world, AbilitySlot slot) {
         NbtCompound nbt = stack.getNbt();
-        if (nbt == null || !nbt.contains(KEY_COOLDOWN_END)) {
+        String key = cooldownKey(slot);
+        if (nbt == null || !nbt.contains(key)) {
             return false;
         }
-        return world.getTime() < nbt.getLong(KEY_COOLDOWN_END);
+        return world.getTime() < nbt.getLong(key);
     }
 
-    /** Ticks remaining on this stack's active ability, for tooltip/UX purposes. */
-    public static long getCooldownTicksRemaining(ItemStack stack, ServerWorld world) {
+    /** Ticks remaining on the given ability slot, for tooltip/UX purposes. */
+    public static long getCooldownTicksRemaining(ItemStack stack, ServerWorld world, AbilitySlot slot) {
         NbtCompound nbt = stack.getNbt();
-        if (nbt == null || !nbt.contains(KEY_COOLDOWN_END)) {
+        String key = cooldownKey(slot);
+        if (nbt == null || !nbt.contains(key)) {
             return 0L;
         }
-        long remaining = nbt.getLong(KEY_COOLDOWN_END) - world.getTime();
+        long remaining = nbt.getLong(key) - world.getTime();
         return Math.max(0L, remaining);
     }
 }
