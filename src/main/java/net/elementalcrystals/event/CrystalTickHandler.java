@@ -5,7 +5,6 @@ import net.elementalcrystals.element.ElementAbility;
 import net.elementalcrystals.element.FireAbility;
 import net.elementalcrystals.element.FrostAbility;
 import net.elementalcrystals.element.LightningAbility;
-import net.elementalcrystals.element.VoidAbility;
 import net.elementalcrystals.item.CrystalItem;
 import net.elementalcrystals.util.CrystalDataHelper;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -55,7 +54,6 @@ public final class CrystalTickHandler {
     private static final FireAbility FIRE = new FireAbility();
     private static final FrostAbility FROST = new FrostAbility();
     private static final LightningAbility LIGHTNING = new LightningAbility();
-    private static final VoidAbility VOID = new VoidAbility();
 
     private CrystalTickHandler() {
     }
@@ -147,8 +145,6 @@ public final class CrystalTickHandler {
                 return FROST;
             case LIGHTNING:
                 return LIGHTNING;
-            case VOID_ELEMENT:
-                return VOID;
             default:
                 return null;
         }
