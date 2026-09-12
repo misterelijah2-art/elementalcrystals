@@ -72,7 +72,11 @@ public class FireAbility implements ElementAbility {
                 center.x + ACTIVE_RADIUS, center.y + 3, center.z + ACTIVE_RADIUS
         );
 
-        List<MobEntity> mobs = world.getEntitiesByClass(MobEntity.class, area, mob -> mob.isAlive() && mob != player);
+        // MobEntity never includes ServerPlayerEntity, so the getEntitiesByClass
+        // filter for MobEntity.class already excludes the player - no explicit
+        // "mob != player" identity check is needed (and comparing the two types
+        // directly does not compile, since neither is a subtype of the other).
+        List<MobEntity> mobs = world.getEntitiesByClass(MobEntity.class, area, MobEntity::isAlive);
         for (MobEntity mob : mobs) {
             mob.setFireTicks(100); // 5 seconds of burning
         }
