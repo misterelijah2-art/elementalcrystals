@@ -7,27 +7,26 @@
   "element.elementalcrystals.fire": "Fire",
   "element.elementalcrystals.frost": "Frost",
   "element.elementalcrystals.lightning": "Lightning",
-  "element.elementalcrystals.void_element": "the Void",
 
   "tooltip.elementalcrystals.inert": "An inert crystal. Right-click to awaken it.",
   "tooltip.elementalcrystals.passive_header": "Passive:",
-  "tooltip.elementalcrystals.active_header": "Active (right-click):",
+  "tooltip.elementalcrystals.primary_header": "Right-click:",
+  "tooltip.elementalcrystals.secondary_header": "Sneak + right-click:",
 
   "tooltip.elementalcrystals.fire.passive": "Immune to fire and lava damage.",
-  "tooltip.elementalcrystals.fire.active": "Ignite Burst - engulfs nearby enemies in flame and empowers your strength. (20s cooldown)",
+  "tooltip.elementalcrystals.fire.primary": "Ignite Burst - engulfs nearby enemies in flame and empowers your strength. (20s cooldown)",
+  "tooltip.elementalcrystals.fire.secondary": "Flame Dash - dash forward leaving a burning trail. (12s cooldown)",
   "tooltip.elementalcrystals.fire.tradeoff": "Weakened while submerged in water.",
 
   "tooltip.elementalcrystals.frost.passive": "Immune to freezing; chills nearby enemies.",
-  "tooltip.elementalcrystals.frost.active": "Freeze Burst - roots and damages nearby enemies. (30s cooldown)",
+  "tooltip.elementalcrystals.frost.primary": "Freeze Burst - roots and damages nearby enemies. (30s cooldown)",
+  "tooltip.elementalcrystals.frost.secondary": "Ice Wall - grants a defensive Resistance shield. (18s cooldown)",
   "tooltip.elementalcrystals.frost.tradeoff": "Permanently slowed while the crystal is active.",
 
   "tooltip.elementalcrystals.lightning.passive": "Immune to lightning strikes; may chain a shock when struck.",
-  "tooltip.elementalcrystals.lightning.active": "Storm Dash - dash forward and shock enemies on landing. (15s cooldown)",
-  "tooltip.elementalcrystals.lightning.tradeoff": "Costs hunger and deals self-damage on use.",
-
-  "tooltip.elementalcrystals.void_element.passive": "Grants night vision and a slow health trickle.",
-  "tooltip.elementalcrystals.void_element.active": "Void Siphon - drains life from nearby enemies to heal you. (25s cooldown)",
-  "tooltip.elementalcrystals.void_element.tradeoff": "Leaves you blinded and hungry afterward.",
+  "tooltip.elementalcrystals.lightning.primary": "Storm Dash - dash forward and shock enemies on landing. (15s cooldown)",
+  "tooltip.elementalcrystals.lightning.secondary": "Static Pulse - knockback nova that shocks nearby enemies. (10s cooldown)",
+  "tooltip.elementalcrystals.lightning.tradeoff": "Storm Dash costs hunger and deals self-damage on use.",
 
   "message.elementalcrystals.awakened": "Your crystal awakens with the power of %s!",
   "message.elementalcrystals.on_cooldown": "The crystal is still recharging (%s s left)."
