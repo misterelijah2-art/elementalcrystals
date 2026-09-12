@@ -35,6 +35,18 @@ import net.minecraft.util.Hand;
  * (status effects below are given durations comfortably longer than 20
  * ticks so they never visibly flicker) against server performance, since
  * this scan runs for every online player every interval.
+ * <p>
+ * VERSION NOTE: Fabric API's fabric-entity-events-v1 module, as shipped in
+ * the 0.92.x builds used for 1.20.1, only exposes ALLOW_DAMAGE,
+ * ALLOW_DEATH, AFTER_DEATH, and MOB_CONVERSION on ServerLivingEntityEvents
+ * - there is no AFTER_DAMAGE event on this version (it was added later, in
+ * the 1.20.5+ line of Fabric API, and never backported). Both of
+ * Lightning's damage-reactive behaviours - lightning-strike immunity and
+ * the chain-shock retaliation proc - are therefore implemented from the
+ * single ALLOW_DAMAGE callback below: immunity by returning false (which
+ * cancels the incoming damage outright), and the chain-shock by triggering
+ * it as a side effect just before returning true (letting the original hit
+ * still land normally).
  */
 public final class CrystalTickHandler {
 
@@ -51,7 +63,6 @@ public final class CrystalTickHandler {
     public static void register() {
         ServerTickEvents.END_WORLD_TICK.register(CrystalTickHandler::onEndWorldTick);
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(CrystalTickHandler::onAllowDamage);
-        ServerLivingEntityEvents.AFTER_DAMAGE.register(CrystalTickHandler::onAfterDamage);
     }
 
     private static void onEndWorldTick(ServerWorld world) {
@@ -71,50 +82,39 @@ public final class CrystalTickHandler {
     }
 
     /**
-     * Cancels lightning-strike damage entirely for players wielding an
-     * activated Lightning crystal - the documented "immunity to lightning
-     * strikes" passive. This must run at ALLOW_DAMAGE (before mitigation)
-     * since AFTER_DAMAGE cannot un-apply damage that already landed.
+     * Single entry point for all of Lightning's reactive damage behaviour,
+     * since ALLOW_DAMAGE is the only damage-observation hook this Fabric
+     * API version exposes.
+     * <p>
+     * - Lightning-strike damage against a Lightning-crystal wielder is
+     *   cancelled outright (return false) - full immunity to lightning
+     *   strikes, matching the documented passive.
+     * - Any other damage from an identifiable attacker/source entity has a
+     *   15% chance to trigger the chain-shock retaliation (LightningAbility
+     *   #onMeleeDamageTaken) before the original hit is allowed to proceed
+     *   (return true) - this approximates an "after damage" reaction using
+     *   only the "allow damage" hook, since no true after-the-fact event
+     *   exists on this Fabric API version.
      */
     private static boolean onAllowDamage(LivingEntity entity, DamageSource source, float amount) {
         if (!(entity instanceof ServerPlayerEntity player)) {
             return true;
         }
-        if (!source.isOf(DamageTypes.LIGHTNING_BOLT)) {
-            return true;
-        }
-        ItemStack crystal = findActivatedCrystal(player);
-        if (crystal != null && CrystalDataHelper.getElement(crystal) == Element.LIGHTNING) {
-            return false; // cancel the damage: full lightning-strike immunity
-        }
-        return true;
-    }
 
-    /**
-     * Fired whenever any living entity takes damage (and survives it). We
-     * only care about ServerPlayerEntity targets wielding an activated
-     * Lightning crystal, to resolve the 15% chain-shock retaliation
-     * described in LightningAbility. Restricted to damage from an
-     * identifiable attacker/source entity (melee or projectile), excluding
-     * things like fall damage or burning, which shouldn't proc a
-     * "counter-shock".
-     */
-    private static void onAfterDamage(LivingEntity entity, DamageSource source, float baseDamageTaken,
-                                       float damageTaken, boolean blocked) {
-        if (blocked || damageTaken <= 0f) {
-            return;
-        }
-        if (!(entity instanceof ServerPlayerEntity player)) {
-            return;
-        }
-        if (source.getAttacker() == null && source.getSource() == null) {
-            return;
-        }
         ItemStack crystal = findActivatedCrystal(player);
         if (crystal == null || CrystalDataHelper.getElement(crystal) != Element.LIGHTNING) {
-            return;
+            return true;
         }
-        LIGHTNING.onMeleeDamageTaken(player);
+
+        if (source.isOf(DamageTypes.LIGHTNING_BOLT)) {
+            return false; // cancel the damage: full lightning-strike immunity
+        }
+
+        if (amount > 0f && (source.getAttacker() != null || source.getSource() != null)) {
+            LIGHTNING.onMeleeDamageTaken(player);
+        }
+
+        return true;
     }
 
     /**
