@@ -9,11 +9,17 @@ import java.util.Locale;
  * deactivated / un-rolled state and is never selected by the RNG roll -
  * see CrystalDataHelper#rollRandomElement().
  * <p>
- * Elements are deliberately mechanically distinct (see the *Ability classes):
+ * Elements are deliberately mechanically distinct (see the *Ability
+ * classes) - each has 3 abilities (1 passive + 2 actives):
  * - FIRE: aggressive, high risk/high reward, punishes staying near water.
  * - FROST: control/defensive, punishes the user's own mobility.
  * - LIGHTNING: burst/mobility, punishes the user's own health/hunger.
- * - VOID: sustain/utility, punishes the user with periodic hunger/darkness cost.
+ * <p>
+ * VOID_ELEMENT is retained in the enum (rather than deleted outright) for
+ * backward NBT compatibility with any world where a crystal may have
+ * already rolled it in an earlier version of this mod, but it has been
+ * removed from ROLLABLE - the mod's current design is scoped to exactly
+ * the 3 core elements above.
  */
 public enum Element implements StringIdentifiable {
     NONE,
@@ -22,8 +28,8 @@ public enum Element implements StringIdentifiable {
     LIGHTNING,
     VOID_ELEMENT;
 
-    /** Elements that can actually be rolled - excludes NONE. */
-    public static final Element[] ROLLABLE = { FIRE, FROST, LIGHTNING, VOID_ELEMENT };
+    /** Elements that can actually be rolled - excludes NONE and VOID_ELEMENT. */
+    public static final Element[] ROLLABLE = { FIRE, FROST, LIGHTNING };
 
     public String getId() {
         return this.name().toLowerCase(Locale.ROOT);
