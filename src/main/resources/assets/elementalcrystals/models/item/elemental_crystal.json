@@ -1,0 +1,24 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "elementalcrystals:item/elemental_crystal_inert"
+  },
+  "overrides": [
+    {
+      "predicate": { "elementalcrystals:element": 1 },
+      "model": "elementalcrystals:item/elemental_crystal_fire"
+    },
+    {
+      "predicate": { "elementalcrystals:element": 2 },
+      "model": "elementalcrystals:item/elemental_crystal_frost"
+    },
+    {
+      "predicate": { "elementalcrystals:element": 3 },
+      "model": "elementalcrystals:item/elemental_crystal_lightning"
+    },
+    {
+      "predicate": { "elementalcrystals:element": 4 },
+      "model": "elementalcrystals:item/elemental_crystal_void"
+    }
+  ]
+}
