@@ -3,6 +3,7 @@ package net.elementalcrystals.item;
 import net.elementalcrystals.element.Element;
 import net.elementalcrystals.element.ElementAbility;
 import net.elementalcrystals.util.CrystalDataHelper;
+import net.elementalcrystals.util.CrystalDataHelper.AbilitySlot;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -28,8 +29,13 @@ import java.util.function.Supplier;
  * NBT-stored state read via CrystalDataHelper:
  * - Deactivated (Element.NONE, Activated=false): right-click rolls a random
  *   element and permanently converts this exact ItemStack.
- * - Activated: right-click instead invokes that element's active ability,
- *   subject to its own per-stack cooldown.
+ * - Activated: right-click (or sneak + right-click) instead invokes that
+ *   element's primary or secondary active ability, subject to that
+ *   ability's own independent cooldown (see CrystalDataHelper.AbilitySlot).
+ * <p>
+ * Each activated crystal therefore exposes exactly 3 abilities: a passive
+ * (ticked in CrystalTickHandler), a primary active (plain right-click),
+ * and a secondary active (sneak + right-click) - see ElementAbility.
  * <p>
  * All roll/ability logic only executes server-side (guarded by
  * `!world.isClient` checks) to keep RNG and gameplay effects authoritative;
@@ -42,25 +48,22 @@ import java.util.function.Supplier;
  * Activated NBT already prevents unwanted merging even without the
  * maxCount cap, but the cap also stops two *matching* elemental crystals
  * from silently merging into a stack of 2 (each crystal should be a
- * distinct, trackable stack with its own cooldown).
+ * distinct, trackable stack with its own cooldowns).
  */
 public class CrystalItem extends Item {
 
     private final Supplier<ElementAbility> fireAbility;
     private final Supplier<ElementAbility> frostAbility;
     private final Supplier<ElementAbility> lightningAbility;
-    private final Supplier<ElementAbility> voidAbility;
 
     public CrystalItem(Settings settings,
                         Supplier<ElementAbility> fireAbility,
                         Supplier<ElementAbility> frostAbility,
-                        Supplier<ElementAbility> lightningAbility,
-                        Supplier<ElementAbility> voidAbility) {
+                        Supplier<ElementAbility> lightningAbility) {
         super(settings);
         this.fireAbility = fireAbility;
         this.frostAbility = frostAbility;
         this.lightningAbility = lightningAbility;
-        this.voidAbility = voidAbility;
     }
 
     private ElementAbility abilityFor(Element element) {
@@ -71,8 +74,6 @@ public class CrystalItem extends Item {
                 return frostAbility.get();
             case LIGHTNING:
                 return lightningAbility.get();
-            case VOID_ELEMENT:
-                return voidAbility.get();
             default:
                 return null;
         }
@@ -105,8 +106,15 @@ public class CrystalItem extends Item {
             return TypedActionResult.pass(stack);
         }
 
-        if (CrystalDataHelper.isOnCooldown(stack, serverWorld)) {
-            long remainingTicks = CrystalDataHelper.getCooldownTicksRemaining(stack, serverWorld);
+        // Sneak + right-click triggers the secondary ability; plain
+        // right-click triggers the primary ability. Each slot has its own
+        // independent cooldown (CrystalDataHelper.AbilitySlot), so using
+        // one never blocks the other.
+        AbilitySlot slot = player.isSneaking() ? AbilitySlot.SECONDARY : AbilitySlot.PRIMARY;
+        int cooldownTicks = slot == AbilitySlot.PRIMARY ? ability.getPrimaryCooldownTicks() : ability.getSecondaryCooldownTicks();
+
+        if (CrystalDataHelper.isOnCooldown(stack, serverWorld, slot)) {
+            long remainingTicks = CrystalDataHelper.getCooldownTicksRemaining(stack, serverWorld, slot);
             player.sendMessage(
                     Text.translatable("message.elementalcrystals.on_cooldown", (remainingTicks / 20) + 1)
                             .formatted(Formatting.GRAY),
@@ -115,8 +123,12 @@ public class CrystalItem extends Item {
             return TypedActionResult.fail(stack);
         }
 
-        ability.triggerActive(player, stack);
-        CrystalDataHelper.startCooldown(stack, serverWorld, ability.getCooldownTicks());
+        if (slot == AbilitySlot.PRIMARY) {
+            ability.triggerPrimary(player, stack);
+        } else {
+            ability.triggerSecondary(player, stack);
+        }
+        CrystalDataHelper.startCooldown(stack, serverWorld, slot, cooldownTicks);
         return TypedActionResult.success(stack, false);
     }
 
@@ -140,10 +152,6 @@ public class CrystalItem extends Item {
             case LIGHTNING -> {
                 world.spawnParticles(ParticleTypes.ELECTRIC_SPARK, pos.x, pos.y + 1.0, pos.z, 60, 0.6, 0.8, 0.6, 0.1);
                 world.playSound(null, player.getBlockPos(), SoundEvents.ENTITY_LIGHTNING_BOLT_THUNDER, SoundCategory.PLAYERS, 0.5f, 1.6f);
-            }
-            case VOID_ELEMENT -> {
-                world.spawnParticles(ParticleTypes.PORTAL, pos.x, pos.y + 1.0, pos.z, 60, 0.6, 0.8, 0.6, 0.2);
-                world.playSound(null, player.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 0.7f, 0.8f);
             }
             default -> {
             }
@@ -174,8 +182,10 @@ public class CrystalItem extends Item {
         }
         tooltip.add(Text.translatable("tooltip.elementalcrystals.passive_header").formatted(Formatting.GRAY));
         tooltip.add(Text.translatable("tooltip.elementalcrystals." + element.getId() + ".passive").formatted(colorFor(element)));
-        tooltip.add(Text.translatable("tooltip.elementalcrystals.active_header").formatted(Formatting.GRAY));
-        tooltip.add(Text.translatable("tooltip.elementalcrystals." + element.getId() + ".active").formatted(colorFor(element)));
+        tooltip.add(Text.translatable("tooltip.elementalcrystals.primary_header").formatted(Formatting.GRAY));
+        tooltip.add(Text.translatable("tooltip.elementalcrystals." + element.getId() + ".primary").formatted(colorFor(element)));
+        tooltip.add(Text.translatable("tooltip.elementalcrystals.secondary_header").formatted(Formatting.GRAY));
+        tooltip.add(Text.translatable("tooltip.elementalcrystals." + element.getId() + ".secondary").formatted(colorFor(element)));
         tooltip.add(Text.translatable("tooltip.elementalcrystals." + element.getId() + ".tradeoff").formatted(Formatting.RED, Formatting.ITALIC));
     }
 
@@ -187,8 +197,6 @@ public class CrystalItem extends Item {
                 return Formatting.AQUA;
             case LIGHTNING:
                 return Formatting.YELLOW;
-            case VOID_ELEMENT:
-                return Formatting.DARK_PURPLE;
             default:
                 return Formatting.GRAY;
         }
