@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "elementalcrystals",
+  "version": "${version}",
+  "name": "Elemental Crystals",
+  "description": "Every player awakens with a mysterious offhand crystal. Right-click it once to roll a random element and unlock a passive and active ability tied to that element forever.",
+  "authors": [
+    "YourName"
+  ],
+  "contact": {
+    "homepage": "https://github.com/misterelijah2-art/elementalcrystals",
+    "sources": "https://github.com/misterelijah2-art/elementalcrystals"
+  },
+  "license": "MIT",
+  "icon": "assets/elementalcrystals/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.elementalcrystals.ElementalCrystals"
+    ],
+    "client": [
+      "net.elementalcrystals.client.ElementalCrystalsClient"
+    ]
+  },
+  "mixins": [],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "~1.20.1",
+    "java": ">=17",
+    "fabric-api": "*"
+  }
+}
