@@ -18,13 +18,17 @@ import java.util.Random;
  * <p>
  * Passive: 15% chance, whenever the player takes damage from an attacker
  * (melee or projectile), to retaliate with a small chain-shock against a
- * nearby enemy. This is event-driven (see CrystalTickHandler's
- * ServerLivingEntityEvents.AFTER_DAMAGE hook, which calls
- * onMeleeDamageTaken below) rather than interval-ticked, since it needs to
- * react to the exact moment damage lands. Also grants full immunity to
- * lightning-strike damage - handled directly in CrystalTickHandler via
- * ServerLivingEntityEvents.ALLOW_DAMAGE, which cancels the damage before
- * it applies (this class only implements the reactive chain-shock).
+ * nearby enemy. This is event-driven, triggered from CrystalTickHandler's
+ * ServerLivingEntityEvents.ALLOW_DAMAGE hook (which calls
+ * onMeleeDamageTaken below just before returning true to let the damage
+ * proceed normally) - Fabric API's 1.20.1-era entity-events module does
+ * not expose an AFTER_DAMAGE event (that was added later, in the 1.20.5+
+ * line), so ALLOW_DAMAGE is the only damage-observation hook available and
+ * is reused here for both the reactive proc and, in CrystalTickHandler, for
+ * lightning-strike immunity. Also grants full immunity to lightning-strike
+ * damage - handled directly in CrystalTickHandler via ALLOW_DAMAGE, which
+ * cancels the damage before it applies (this class only implements the
+ * reactive chain-shock).
  * <p>
  * Active: "Storm Dash" - launches the player forward a short distance
  * (velocity impulse in their look direction) and deals AoE shock damage
@@ -70,9 +74,9 @@ public class LightningAbility implements ElementAbility {
     }
 
     /**
-     * Invoked by CrystalTickHandler when this player has just taken damage
-     * from an attacker while wielding a Lightning crystal, to resolve the
-     * 15% retaliation chain-shock.
+     * Invoked by CrystalTickHandler's ALLOW_DAMAGE hook when this player is
+     * about to take damage from an attacker while wielding a Lightning
+     * crystal, to resolve the 15% retaliation chain-shock.
      */
     public void onMeleeDamageTaken(ServerPlayerEntity player) {
         if (RANDOM.nextDouble() >= PASSIVE_CHAIN_CHANCE) {
@@ -84,7 +88,10 @@ public class LightningAbility implements ElementAbility {
                 center.x - PASSIVE_CHAIN_RADIUS, center.y - 2, center.z - PASSIVE_CHAIN_RADIUS,
                 center.x + PASSIVE_CHAIN_RADIUS, center.y + 3, center.z + PASSIVE_CHAIN_RADIUS
         );
-        List<MobEntity> mobs = world.getEntitiesByClass(MobEntity.class, area, mob -> mob.isAlive() && mob != player);
+        // MobEntity never includes ServerPlayerEntity, so no explicit
+        // player-identity check is needed here (and the two types are not
+        // directly comparable in Java).
+        List<MobEntity> mobs = world.getEntitiesByClass(MobEntity.class, area, MobEntity::isAlive);
         if (mobs.isEmpty()) {
             return;
         }
@@ -111,7 +118,9 @@ public class LightningAbility implements ElementAbility {
                 landing.x - LANDING_RADIUS, landing.y - 2, landing.z - LANDING_RADIUS,
                 landing.x + LANDING_RADIUS, landing.y + 3, landing.z + LANDING_RADIUS
         );
-        List<MobEntity> mobs = world.getEntitiesByClass(MobEntity.class, area, mob -> mob.isAlive() && mob != player);
+        // MobEntity never includes ServerPlayerEntity, so no explicit
+        // player-identity check is needed here.
+        List<MobEntity> mobs = world.getEntitiesByClass(MobEntity.class, area, MobEntity::isAlive);
         for (MobEntity mob : mobs) {
             mob.damage(player.getDamageSources().lightningBolt(), 6.0f);
         }
