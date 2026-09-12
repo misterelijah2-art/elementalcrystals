@@ -15,10 +15,6 @@
     {
       "predicate": { "elementalcrystals:element": 3 },
       "model": "elementalcrystals:item/elemental_crystal_lightning"
-    },
-    {
-      "predicate": { "elementalcrystals:element": 4 },
-      "model": "elementalcrystals:item/elemental_crystal_void"
     }
   ]
 }
