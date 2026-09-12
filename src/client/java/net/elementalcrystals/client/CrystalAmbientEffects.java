@@ -82,8 +82,6 @@ public final class CrystalAmbientEffects {
                 return ParticleTypes.SNOWFLAKE;
             case LIGHTNING:
                 return ParticleTypes.ELECTRIC_SPARK;
-            case VOID_ELEMENT:
-                return ParticleTypes.PORTAL;
             default:
                 return null;
         }
