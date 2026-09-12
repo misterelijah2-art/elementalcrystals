@@ -4,28 +4,42 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 /**
- * Contract implemented by every element's ability handler. Each element gets
- * exactly one implementation covering both its passive (ticked) behaviour
- * and its active (right-click) behaviour, plus metadata used for cooldowns
- * and audio/visual identity.
+ * Contract implemented by every element's ability handler. Each element now
+ * provides exactly three abilities, satisfying the "at least 3 abilities
+ * per crystal" requirement:
+ * <ol>
+ *   <li>A passive (always-on, ticked) effect - {@link #tickPassive}.</li>
+ *   <li>A primary active ability, triggered by a plain right-click -
+ *       {@link #triggerPrimary}.</li>
+ *   <li>A secondary active ability, triggered by sneak + right-click -
+ *       {@link #triggerSecondary}.</li>
+ * </ol>
+ * The two actives are tracked on independent cooldowns (see
+ * CrystalDataHelper.AbilitySlot) so using one never blocks the other.
  * <p>
  * All methods that affect gameplay state must only be invoked from the
  * server side (see CrystalTickHandler / CrystalItem#use). Implementations
- * may spawn particles via ServerWorld#spawnParticles, which is itself
- * server-authoritative and network-synced to nearby clients - this keeps the
- * "visuals may be client-driven, gameplay must be server-driven" split
- * simple without needing custom packets.
+ * may spawn particles via ServerWorld#spawnParticles (directly, or via the
+ * shape helpers in CrystalParticles), which is itself server-authoritative
+ * and network-synced to nearby clients - this keeps the "visuals may be
+ * client-driven, gameplay must be server-driven" split simple without
+ * needing custom packets.
  */
 public interface ElementAbility {
 
     Element getElement();
 
     /**
-     * Cooldown, in ticks, between two activations of this element's active
-     * ability. 20 ticks = 1 second. Values are chosen per-element based on
-     * the power of the effect - see each implementation's class comment.
+     * Cooldown, in ticks, for the primary active ability (plain
+     * right-click). 20 ticks = 1 second.
      */
-    int getCooldownTicks();
+    int getPrimaryCooldownTicks();
+
+    /**
+     * Cooldown, in ticks, for the secondary active ability (sneak +
+     * right-click). 20 ticks = 1 second.
+     */
+    int getSecondaryCooldownTicks();
 
     /**
      * Called every CrystalTickHandler.PASSIVE_INTERVAL_TICKS while the
@@ -36,10 +50,14 @@ public interface ElementAbility {
     void tickPassive(ServerPlayerEntity player, ItemStack crystalStack);
 
     /**
-     * Called when the player right-clicks an already-activated crystal of
-     * this element and the per-stack cooldown has expired. Implementations
-     * are responsible for any self-cost/tradeoff and for triggering
-     * particles/sounds.
+     * Called when the player plain-right-clicks an already-activated
+     * crystal of this element and the primary cooldown has expired.
      */
-    void triggerActive(ServerPlayerEntity player, ItemStack crystalStack);
+    void triggerPrimary(ServerPlayerEntity player, ItemStack crystalStack);
+
+    /**
+     * Called when the player sneaks + right-clicks an already-activated
+     * crystal of this element and the secondary cooldown has expired.
+     */
+    void triggerSecondary(ServerPlayerEntity player, ItemStack crystalStack);
 }
