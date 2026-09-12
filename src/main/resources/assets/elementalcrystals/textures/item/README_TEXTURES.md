@@ -1,21 +1,37 @@
-# Texture specifications
+# Texture specifications - amethyst shard retexture
 
-All textures are 16x16 PNG, placed in this directory
-(`assets/elementalcrystals/textures/item/`). No PNGs are included in this
-delivery (this repo ships game logic, not art) - generate or paint these
-five files before running `runClient`, otherwise Minecraft will render the
-missing-texture purple/black checkerboard for the crystal.
+All four textures are 16x16 PNG, placed in this directory
+(`assets/elementalcrystals/textures/item/`). Per the mod's design, every
+crystal state reuses vanilla's **amethyst shard** silhouette
+(`minecraft:item/amethyst_shard`) as its base shape, then gets recolored
+per element - rather than drawing a new crystal shape from scratch, this
+keeps a consistent, already-polished silhouette and only changes the
+palette/shading per state.
 
-| File | Visual description |
-|---|---|
-| `elemental_crystal_inert.png` | A dull, cracked grey crystal shard. Low-saturation grey/charcoal palette (#4a4a4a to #6e6e6e), a few 1px darker "crack" lines through the middle, faint white specular highlight top-left. Should read as "broken/dormant" at a glance. |
-| `elemental_crystal_fire.png` | Same crystal silhouette as inert, recolored in reds/oranges (#b5321c core, #ff8a3d glow edges), with a soft yellow-white highlight suggesting internal flame. Optionally add a faint ember/glow halo bleeding 1px past the silhouette. |
-| `elemental_crystal_frost.png` | Same silhouette, recolored in icy blues/whites (#1c6fb5 core, #aee8ff highlights), sharper/more angular crack lines suggesting ice facets, small white sparkle flecks. |
-| `elemental_crystal_lightning.png` | Same silhouette, recolored in yellow/violet (#f5e642 core veins over a #3a2a5c dark base), jagged bolt-shaped internal lines instead of smooth cracks, bright white-yellow core. |
-| `elemental_crystal_void.png` | Same silhouette, recolored in deep purples/blacks (#1a0e2e base, #8b2fd1 glowing veins), small "starfield" flecks of white/lavender inside to suggest looking into a void. |
+## Workflow
 
-Keep the outer silhouette (the crystal shard shape) identical across all
-five textures so the item is instantly recognizable regardless of state -
-only the internal color/pattern should change between elements. This also
-makes it trivial to produce all five from one base shape in an editor like
-Aseprite/GIMP using layer recoloring.
+1. Extract the vanilla base texture: `assets/minecraft/textures/item/amethyst_shard.png`
+   from the Minecraft client jar (`.minecraft/versions/1.20.1/1.20.1.jar`,
+   or via any resource pack extraction tool). It's a 16x16 PNG.
+2. Open it in a pixel editor (Aseprite, GIMP, Piskel, etc.).
+3. For each of the 4 files below, duplicate the base layer and use
+   **Hue/Saturation** or **Selective Color** adjustments to recolor the
+   existing shading/shape - do not redraw the silhouette, only shift its
+   color. This guarantees all 4 textures read as "the same item, different
+   state" at a glance, exactly like vanilla's dyed/stained item families.
+4. Export each as a flat `item/generated` texture (single layer, layer0).
+
+## Files and target palettes
+
+| File | Base | Target recolor |
+|---|---|---|
+| `elemental_crystal_inert.png` | amethyst_shard.png | Desaturate almost fully (drop saturation to ~10-15%) and darken by ~20%, landing around #4a4a4a to #6e6e6e grey/charcoal. Keeps the amethyst's existing highlight/shadow shapes but reads as "dull, dormant, cracked." |
+| `elemental_crystal_fire.png` | amethyst_shard.png | Shift hue to red/orange (target core ~#b5321c, edge highlights ~#ff8a3d). Keep the same value/lightness map as the original amethyst so its faceted shading reads correctly under the new color. |
+| `elemental_crystal_frost.png` | amethyst_shard.png | Shift hue to icy blue/white (target core ~#1c6fb5, highlights ~#aee8ff). Slightly increase contrast on the existing facet edges so it reads "sharper/icier" than the soft amethyst purple. |
+| `elemental_crystal_lightning.png` | amethyst_shard.png | Shift hue to yellow-violet (dark base ~#3a2a5c, bright veins/highlights ~#f5e642). This is the one recolor that intentionally keeps two contrasting tones (dark base + bright veins) rather than a single hue shift, to read as "charged/electric." |
+
+No PNGs are included in this delivery (this repo ships game logic, not
+art) - perform the above before running `runClient`, otherwise Minecraft
+will render the missing-texture purple/black checkerboard for the crystal.
+All gameplay logic (rolling, abilities, cooldowns, persistence) works
+regardless of whether textures are present.
