@@ -12,8 +12,7 @@ import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.MathHelper;
-
-import java.util.Random;
+import net.minecraft.util.math.random.Random;
 
 /**
  * Purely cosmetic client-side ambient particle sparkle for activated
@@ -25,10 +24,15 @@ import java.util.Random;
  * <p>
  * Runs at a low ~10% per-tick chance per hand to keep the effect subtle
  * (a light sparkle rather than a constant particle fountain) and cheap.
+ * <p>
+ * VERSION NOTE: uses net.minecraft.util.math.random.Random (Minecraft's
+ * own RNG interface, created via Random.create()) rather than
+ * java.util.Random, since MathHelper.nextDouble(...) requires the former -
+ * the two are unrelated types and are not interchangeable.
  */
 public final class CrystalAmbientEffects {
 
-    private static final Random RANDOM = new Random();
+    private static final Random RANDOM = Random.create();
     private static final float SPAWN_CHANCE_PER_TICK = 0.1f;
 
     private CrystalAmbientEffects() {
