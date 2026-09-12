@@ -4,7 +4,6 @@ import net.elementalcrystals.ElementalCrystals;
 import net.elementalcrystals.element.FireAbility;
 import net.elementalcrystals.element.FrostAbility;
 import net.elementalcrystals.element.LightningAbility;
-import net.elementalcrystals.element.VoidAbility;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
@@ -34,8 +33,7 @@ public final class ModItems {
             new Item.Settings().maxCount(1),
             FireAbility::new,
             FrostAbility::new,
-            LightningAbility::new,
-            VoidAbility::new
+            LightningAbility::new
     );
 
     private static final RegistryKey<ItemGroup> CRYSTAL_GROUP_KEY = RegistryKey.of(
